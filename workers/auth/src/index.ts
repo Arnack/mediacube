@@ -10,7 +10,7 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>()
 
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'https://ideavault.pages.dev'],
+  origin: ['http://localhost:5173', 'https://ideavault.pages.dev', 'https://e4aef419.ideavault-47y.pages.dev', 'https://master.ideavault-47y.pages.dev'],
   allowHeaders: ['Content-Type', 'Authorization'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,

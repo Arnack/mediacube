@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently --names auth,notes,parser,ai,web --prefix-colors blue,green,yellow,magenta,cyan \"cd workers/auth && wrangler dev --port 8787 --inspector-port 9229 --persist-to ../../.wrangler/state\" \"cd workers/notes && wrangler dev --port 8788 --inspector-port 9230 --persist-to ../../.wrangler/state\" \"cd workers/parser && wrangler dev --port 8789 --inspector-port 9231 --persist-to ../../.wrangler/state\" \"cd workers/ai && wrangler dev --port 8790 --inspector-port 9232 --persist-to ../../.wrangler/state\" \"cd apps/web && vite\"",
     "dev:web": "vite",
     "build:web": "vite build",
     "deploy:web": "vite build && wrangler pages deploy apps/web/dist --project-name ideavault",
@@ -17,5 +18,8 @@
     "deploy:ai": "npm -w workers/ai run deploy",
     "deploy:all": "npm run deploy:auth && npm run deploy:notes && npm run deploy:parser && npm run deploy:ai && npm run deploy:web",
     "db:migrate": "wrangler d1 migrations apply ideavault"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
