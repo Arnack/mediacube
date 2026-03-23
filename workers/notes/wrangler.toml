@@ -1,0 +1,14 @@
+name = "ideavault-notes"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ideavault"
+database_id = "0c29c45e-c89f-45b8-b422-b4ccc6bdf235"
+
+[vars]
+AI_WORKER_URL = "https://ideavault-ai.ideavault.workers.dev"
+
+# wrangler secret put JWT_SECRET

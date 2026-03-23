@@ -1,0 +1,21 @@
+{
+  "name": "ideavault",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "workers/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "deploy:web": "vite build && wrangler pages deploy apps/web/dist --project-name ideavault",
+    "deploy:auth": "npm -w workers/auth run deploy",
+    "deploy:notes": "npm -w workers/notes run deploy",
+    "deploy:parser": "npm -w workers/parser run deploy",
+    "deploy:ai": "npm -w workers/ai run deploy",
+    "deploy:all": "npm run deploy:auth && npm run deploy:notes && npm run deploy:parser && npm run deploy:ai && npm run deploy:web",
+    "db:migrate": "wrangler d1 migrations apply ideavault"
+  }
+}

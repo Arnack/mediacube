@@ -1,0 +1,16 @@
+name = "ideavault-ai"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ideavault"
+database_id = "0c29c45e-c89f-45b8-b422-b4ccc6bdf235"
+
+[[kv_namespaces]]
+binding = "AI_SETTINGS"
+id = "c3e6747c835b406c887b5d66d2bd6330"
+
+# wrangler secret put JWT_SECRET
+# wrangler secret put OPENAI_API_KEY

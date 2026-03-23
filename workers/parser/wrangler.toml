@@ -1,0 +1,10 @@
+name = "ideavault-parser"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+AI_WORKER_URL = "https://ideavault-ai.ideavault.workers.dev"
+NOTES_WORKER_URL = "https://ideavault-notes.ideavault.workers.dev"
+
+# wrangler secret put JWT_SECRET
