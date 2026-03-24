@@ -10,6 +10,33 @@ type Bindings = {
 
 type Variables = {
   userId: string
+  userPlan: string
+}
+
+const LIMITS = {
+  free: { notes: 10, url_parses: 5 },
+  pro: { notes: Infinity, url_parses: Infinity },
+}
+
+function today() { return new Date().toISOString().slice(0, 10) }
+
+async function getUserPlan(db: D1Database, userId: string): Promise<string> {
+  const user = await db.prepare('SELECT plan FROM users WHERE id = ?').bind(userId).first<{ plan: string }>()
+  return user?.plan ?? 'free'
+}
+
+async function checkUsage(db: D1Database, userId: string, action: string, limit: number): Promise<boolean> {
+  const d = today()
+  const row = await db.prepare('SELECT count FROM usage_log WHERE user_id = ? AND action = ? AND date = ?').bind(userId, action, d).first<{ count: number }>()
+  return (row?.count ?? 0) < limit
+}
+
+async function incrementUsage(db: D1Database, userId: string, action: string) {
+  const d = today()
+  await db.prepare(
+    `INSERT INTO usage_log (user_id, action, date, count) VALUES (?, ?, ?, 1)
+     ON CONFLICT(user_id, action, date) DO UPDATE SET count = count + 1`
+  ).bind(userId, action, d).run()
 }
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
@@ -29,6 +56,8 @@ app.use('*', async (c, next) => {
     const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(c.env.JWT_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
     const { payload } = await jwtVerify(auth.slice(7), key)
     c.set('userId', payload.sub as string)
+    const plan = await getUserPlan(c.env.DB, payload.sub as string)
+    c.set('userPlan', plan)
     await next()
   } catch {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -105,6 +134,17 @@ app.get('/notes/:id', async (c) => {
 // Create note
 app.post('/notes', async (c) => {
   const userId = c.get('userId')
+  const plan = c.get('userPlan')
+  const limits = LIMITS[plan as keyof typeof LIMITS] ?? LIMITS.free
+
+  // Enforce note limit for free users
+  if (plan === 'free') {
+    const noteCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM notes WHERE user_id = ?').bind(userId).first<{ count: number }>()
+    if ((noteCount?.count ?? 0) >= limits.notes) {
+      return c.json({ error: 'Note limit reached. Upgrade to Pro for unlimited notes.', upgrade: true }, 403)
+    }
+  }
+
   const { title, content, type = 'manual', url, summary, tags = [] } = await c.req.json<{
     title: string; content?: string; type?: string; url?: string; summary?: string; tags?: string[]
   }>()
@@ -116,6 +156,9 @@ app.post('/notes', async (c) => {
     .bind(id, userId, title, content ?? null, type, url ?? null, summary ?? null, now, now).run()
 
   if (tags.length > 0) await attachTags(c.env.DB, id, userId, tags)
+
+  // Track usage
+  await incrementUsage(c.env.DB, userId, 'note_create')
 
   // Async: find connections for this new note
   c.executionCtx?.waitUntil(
@@ -265,6 +308,13 @@ app.delete('/projects/:id', async (c) => {
 // --- Connections ---
 app.get('/connections', async (c) => {
   const userId = c.get('userId')
+  const plan = c.get('userPlan')
+
+  // Connections is a Pro feature
+  if (plan === 'free') {
+    return c.json({ error: 'Connections is a Pro feature. Upgrade to unlock.', upgrade: true }, 403)
+  }
+
   const { results } = await c.env.DB.prepare(`
     SELECT c.*,
       na.title as note_a_title, nb.title as note_b_title

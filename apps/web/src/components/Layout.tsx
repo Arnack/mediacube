@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
+import { useSubscription } from '@/hooks/useSubscription'
+import { Crown } from 'lucide-react'
 
 const LANGS = [
   { code: 'en', label: 'EN' },
@@ -16,12 +18,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { theme, toggle } = useTheme()
+  const { isPro, loading: subLoading } = useSubscription()
 
   const navItems = [
     { to: '/notes', icon: FileText, label: t('nav.notes') },
     { to: '/projects', icon: Folder, label: t('nav.projects') },
-    { to: '/connections', icon: GitBranch, label: t('nav.connections') },
-    { to: '/graph', icon: Network, label: t('nav.graph') },
+    { to: '/connections', icon: GitBranch, label: t('nav.connections'), pro: true },
+    { to: '/graph', icon: Network, label: t('nav.graph'), pro: true },
     { to: '/brief', icon: Lightbulb, label: t('nav.brief') },
     { to: '/settings', icon: Settings, label: t('nav.settings') },
   ]
@@ -72,7 +75,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     'h-4 w-4 flex-shrink-0 transition-colors duration-150',
                     isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                   )} />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.pro && !subLoading && !isPro && (
+                    <Crown className="h-3 w-3 text-primary opacity-70" />
+                  )}
                 </>
               )}
             </NavLink>
@@ -80,7 +86,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Bottom section */}
-        <div className="p-2 border-t border-border space-y-1.5">
+        <div className="p-2 border-t border-border space-y-1.5 flex flex-col">
+          {!subLoading && !isPro && (
+            <div className="px-1 mb-2">
+              <button onClick={() => navigate('/pricing')} className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-medium text-foreground">Upgrade to Pro</span>
+                </div>
+              </button>
+            </div>
+          )}
+
           {/* Language switcher */}
           <div className="flex gap-0.5 px-1 mb-1 bg-secondary/50 rounded-md p-0.5">
             {LANGS.map(l => (

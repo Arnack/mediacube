@@ -10,5 +10,8 @@ database_id = "0c29c45e-c89f-45b8-b422-b4ccc6bdf235"
 
 [vars]
 NOTES_WORKER_URL = "https://ideavault-notes.ideavault.workers.dev"
+STRIPE_PRICE_ID = "price_1Q5H1eBkMaO1XBH5J0NxHnNs"
 
 # wrangler secret put JWT_SECRET
+# wrangler secret put STRIPE_SECRET
+# wrangler secret put STRIPE_WEBHOOK_SECRET

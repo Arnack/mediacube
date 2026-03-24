@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Network } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { notes as notesApi, connections as connectionsApi } from '@/lib/api'
+import { useSubscription } from '@/hooks/useSubscription'
+import { UpgradeBanner } from '@/components/UpgradeBanner'
 import ForceGraph2D from 'react-force-graph-2d'
 
 interface NoteNode { id: string; name: string; val: number; x?: number; y?: number }
@@ -11,12 +13,14 @@ interface ConnLink { source: string; target: string; reason: string }
 export function GraphPage() {
   const nav = useNavigate()
   const { t } = useTranslation()
+  const { isPro, loading: subLoading } = useSubscription()
   const containerRef = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState({ w: 800, h: 600 })
   const [graphData, setGraphData] = useState<{ nodes: NoteNode[]; links: ConnLink[] }>({ nodes: [], links: [] })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!isPro) return
     Promise.all([
       notesApi.list({ limit: '500' }) as Promise<any>,
       connectionsApi.list() as Promise<any>,
@@ -34,7 +38,7 @@ export function GraphPage() {
       })
       setLoading(false)
     })
-  }, [])
+  }, [isPro])
 
   useEffect(() => {
     function measure() {
@@ -65,6 +69,23 @@ export function GraphPage() {
       ctx.fillText(label, node.x, node.y + r + 1)
     }
   }, [])
+
+  // Gate behind Pro
+  if (!isPro) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="border-b px-4 py-3">
+          <h1 className="text-base font-medium flex items-center gap-2">
+            <Network className="h-4 w-4" /> {t('graph.title')}
+          </h1>
+        </div>
+        <UpgradeBanner
+          title="Knowledge Graph"
+          message="Visualize your notes as an interactive knowledge graph. Upgrade to Pro to unlock this powerful feature."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full">

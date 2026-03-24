@@ -126,3 +126,10 @@ export const ai = {
     return full
   },
 }
+
+// Subscription
+export const subscription = {
+  checkout: () => req(BASE.auth, '/checkout', { method: 'POST' }),
+  portal: () => req(BASE.auth, '/portal', { method: 'POST' }),
+  usage: () => req(BASE.auth, '/usage'),
+}

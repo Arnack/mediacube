@@ -11,7 +11,30 @@ type Bindings = {
   OPENAI_API_KEY: string
 }
 
-type Variables = { userId: string }
+type Variables = { userId: string; userPlan: string }
+
+const AI_DAILY_LIMIT_FREE = 10
+
+function today() { return new Date().toISOString().slice(0, 10) }
+
+async function getUserPlan(db: D1Database, userId: string): Promise<string> {
+  const user = await db.prepare('SELECT plan FROM users WHERE id = ?').bind(userId).first<{ plan: string }>()
+  return user?.plan ?? 'free'
+}
+
+async function getAiUsageCount(db: D1Database, userId: string): Promise<number> {
+  const d = today()
+  const row = await db.prepare('SELECT count FROM usage_log WHERE user_id = ? AND action = ? AND date = ?').bind(userId, 'ai_call', d).first<{ count: number }>()
+  return row?.count ?? 0
+}
+
+async function incrementAiUsage(db: D1Database, userId: string) {
+  const d = today()
+  await db.prepare(
+    `INSERT INTO usage_log (user_id, action, date, count) VALUES (?, ?, ?, 1)
+     ON CONFLICT(user_id, action, date) DO UPDATE SET count = count + 1`
+  ).bind(userId, 'ai_call', d).run()
+}
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
@@ -30,9 +53,31 @@ app.use('*', async (c, next) => {
     const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(c.env.JWT_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
     const { payload } = await jwtVerify(auth.slice(7), key)
     c.set('userId', payload.sub as string)
+    const plan = await getUserPlan(c.env.DB, payload.sub as string)
+    c.set('userPlan', plan)
     await next()
   } catch {
     return c.json({ error: 'Unauthorized' }, 401)
+  }
+})
+
+// AI usage limit middleware — applies to AI endpoints (not settings)
+const AI_ENDPOINTS = ['/summarize', '/classify', '/suggestions', '/expand', '/connections', '/chat', '/brief']
+app.use('*', async (c, next) => {
+  const path = new URL(c.req.url).pathname
+  if (!AI_ENDPOINTS.includes(path)) return next()
+
+  const plan = c.get('userPlan')
+  if (plan === 'free') {
+    const count = await getAiUsageCount(c.env.DB, c.get('userId'))
+    if (count >= AI_DAILY_LIMIT_FREE) {
+      return c.json({ error: 'Daily AI limit reached. Upgrade to Pro for unlimited AI.', upgrade: true }, 403)
+    }
+  }
+  await next()
+  // Increment usage after successful response
+  if (c.res.status < 400) {
+    c.executionCtx?.waitUntil(incrementAiUsage(c.env.DB, c.get('userId')))
   }
 })
 

@@ -6,12 +6,15 @@ import { connections } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatRelative } from '@/lib/utils'
+import { useSubscription } from '@/hooks/useSubscription'
+import { UpgradeBanner } from '@/components/UpgradeBanner'
 
 interface Connection { id: string; note_a_id: string; note_b_id: string; note_a_title: string; note_b_title: string; reason: string; created_at: number }
 
 export function ConnectionsPage() {
   const nav = useNavigate()
   const { t } = useTranslation()
+  const { isPro, loading: subLoading } = useSubscription()
   const [list, setList] = useState<Connection[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -20,12 +23,32 @@ export function ConnectionsPage() {
     try {
       const d: any = await connections.list()
       setList(d.connections)
+    } catch {
+      // Free users will get 403
+      setList([])
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { if (isPro) { load() } else { setLoading(false) } }, [isPro])
+
+  // Gate behind Pro
+  if (!isPro) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="border-b px-4 py-3">
+          <h1 className="text-base font-medium flex items-center gap-2">
+            <GitBranch className="h-4 w-4" /> {t('connections.title')}
+          </h1>
+        </div>
+        <UpgradeBanner
+          title="Semantic Connections"
+          message="AI-discovered semantic links between your notes. Upgrade to Pro to unlock this feature."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full">

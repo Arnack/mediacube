@@ -14,6 +14,7 @@ import { ConnectionsPage } from './pages/ConnectionsPage'
 import { GraphPage } from './pages/GraphPage'
 import { BriefPage } from './pages/BriefPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { PricingPage } from './pages/PricingPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/graph" element={<PrivateRoute><GraphPage /></PrivateRoute>} />
         <Route path="/brief" element={<PrivateRoute><BriefPage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
+        <Route path="/pricing" element={<PrivateRoute><PricingPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <Toaster />
