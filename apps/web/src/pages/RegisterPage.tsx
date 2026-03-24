@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { auth as authApi } from '@/lib/api'
 import { setAuth } from '@/store/auth'
@@ -13,6 +14,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,10 +43,27 @@ export function RegisterPage() {
           <p className="text-sm text-muted-foreground">{t('auth.registerTitle')}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <Input type="email" placeholder={t('auth.email')} value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
-            <Input type="password" placeholder={t('auth.passwordHint')} value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
-            <Button type="submit" className="w-full" disabled={loading}>
+          <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1.5 flex flex-col text-left">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('auth.email')}</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+                <Input type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} className="pl-9 h-11 bg-muted/40 focus:bg-background transition-colors" required autoFocus />
+              </div>
+            </div>
+            <div className="space-y-1.5 flex flex-col text-left">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('auth.passwordHint', 'Password (min 8)')}</label>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+                <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-9 pr-10 h-11 bg-muted/40 focus:bg-background transition-colors" required minLength={8} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors p-1" tabIndex={-1}>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <Button type="submit" className="w-full h-11 font-medium mt-6" disabled={loading}>
               {loading ? t('auth.registeringButton') : t('auth.registerButton')}
             </Button>
           </form>

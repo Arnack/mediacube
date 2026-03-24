@@ -16,17 +16,10 @@ const LIMITS = {
   pro: { notes: Infinity, ai_calls: Infinity, url_parses: Infinity },
 }
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:5173',
-  'https://ideavault.pages.dev',
-  'https://e4aef419.ideavault-47y.pages.dev',
-  'https://master.ideavault-47y.pages.dev',
-]
-
 const app = new Hono<{ Bindings: Bindings }>()
 
 app.use('*', cors({
-  origin: ALLOWED_ORIGINS,
+  origin: '*',
   allowHeaders: ['Content-Type', 'Authorization'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
