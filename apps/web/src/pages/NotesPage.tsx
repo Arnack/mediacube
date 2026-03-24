@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import JSZip from 'jszip'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Search, Link as LinkIcon, FileText, Sparkles, X, Archive } from 'lucide-react'
+import { Plus, Search, Link as LinkIcon, FileText, Sparkles, X, Archive, Loader2, ArrowDownWideNarrow, ArrowUpWideNarrow, ArrowUpAZ } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { notes as notesApi, tags as tagsApi, ai, parser } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -132,7 +132,8 @@ export function NotesPage() {
             <Plus className="h-4 w-4" />
             {t('notes.new')}
           </Button>
-          <div className="flex border rounded-md overflow-hidden text-xs">
+          {/* Sort — desktop: 3-button group */}
+          <div className="hidden sm:flex border rounded-md overflow-hidden text-xs">
             {(['newest', 'oldest', 'az'] as const).map(s => (
               <button
                 key={s}
@@ -143,29 +144,50 @@ export function NotesPage() {
               </button>
             ))}
           </div>
+          {/* Sort — mobile: single cycling button */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="sm:hidden h-9 w-9 p-0"
+            onClick={() => setSort(s => s === 'newest' ? 'oldest' : s === 'oldest' ? 'az' : 'newest')}
+            title={t(`notes.sort${sort === 'az' ? 'AZ' : sort.charAt(0).toUpperCase() + sort.slice(1)}`)}
+          >
+            {sort === 'newest' && <ArrowDownWideNarrow className="h-4 w-4" />}
+            {sort === 'oldest' && <ArrowUpWideNarrow className="h-4 w-4" />}
+            {sort === 'az' && <ArrowUpAZ className="h-4 w-4" />}
+          </Button>
           <Button size="sm" variant="outline" onClick={loadSuggestions}>
             <Sparkles className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="outline" onClick={handleExportAll} disabled={exportingAll}>
             <Archive className="h-4 w-4" />
-            <span className="hidden sm:inline">{exportingAll ? t('notes.exporting') : t('notes.exportAll')}</span>
           </Button>
         </div>
 
-        <form onSubmit={handleAddUrl} className="border-b px-4 py-2 flex gap-2">
-          <div className="relative flex-1">
-            <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder={t('notes.pasteUrl')}
-              className="pl-8 h-8 text-sm"
-              value={urlInput}
-              onChange={e => setUrlInput(e.target.value)}
-            />
-          </div>
-          <Button type="submit" size="sm" variant="secondary" disabled={addingUrl || !urlInput.trim()} className="h-8">
-            {addingUrl ? t('notes.saving') : t('notes.save')}
-          </Button>
-        </form>
+        <div className="border-b">
+          <form onSubmit={handleAddUrl} className="px-4 py-2 flex gap-2">
+            <div className="relative flex-1">
+              {addingUrl
+                ? <Loader2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-primary animate-spin" />
+                : <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />}
+              <Input
+                placeholder={t('notes.pasteUrl')}
+                className="pl-8 h-8 text-sm"
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+                disabled={addingUrl}
+              />
+            </div>
+            <Button type="submit" size="sm" disabled={addingUrl || !urlInput.trim()} className="h-8 min-w-[90px]">
+              {addingUrl ? t('notes.importingUrl') : t('notes.importUrl')}
+            </Button>
+          </form>
+          {addingUrl && (
+            <div className="h-0.5 bg-primary/15 overflow-hidden">
+              <div className="h-full w-1/4 bg-primary rounded-full animate-indeterminate" />
+            </div>
+          )}
+        </div>
 
         {tagsList.length > 0 && (
           <div className="border-b px-4 py-2 flex gap-1.5 overflow-x-auto">
@@ -205,9 +227,9 @@ export function NotesPage() {
                 <button
                   key={note.id}
                   onClick={() => nav(`/notes/${note.id}`)}
-                  className="w-full text-left px-4 py-3 hover:bg-accent/30 transition-colors card-hover"
+                  className="w-full max-w-[100vw] text-left px-4 py-3 hover:bg-accent/30 transition-colors card-hover"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {note.type === 'link'
                         ? <LinkIcon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground mt-0.5" />
@@ -216,7 +238,7 @@ export function NotesPage() {
                     </div>
                     <span className="text-xs text-muted-foreground flex-shrink-0">{formatRelative(note.updated_at)}</span>
                   </div>
-                  {note.summary && <p className="text-xs text-muted-foreground mt-1 line-clamp-2 pl-5">{note.summary}</p>}
+                  {note.summary && <p className="text-xs text-muted-foreground mt-1 line-clamp-1 pl-5">{note.summary}</p>}
                   {note.tags.length > 0 && (
                     <div className="flex gap-1 mt-1.5 pl-5 flex-wrap">
                       {note.tags.map(t => (

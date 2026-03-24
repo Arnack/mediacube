@@ -31,6 +31,8 @@
     "pasteUrl": "粘贴文章链接以保存和总结…",
     "saving": "保存中…",
     "save": "保存",
+    "importUrl": "导入",
+    "importingUrl": "导入中…",
     "all": "全部",
     "loading": "加载中…",
     "empty": "暂无笔记。",

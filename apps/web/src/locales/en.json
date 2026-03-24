@@ -31,6 +31,8 @@
     "pasteUrl": "Paste article URL to save & summarize…",
     "saving": "Saving…",
     "save": "Save",
+    "importUrl": "Import",
+    "importingUrl": "Importing…",
     "all": "All",
     "loading": "Loading…",
     "empty": "No notes yet.",

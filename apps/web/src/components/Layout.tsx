@@ -145,13 +145,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
           </NavLink>
         ))}
-        <button
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] text-muted-foreground"
-          onClick={toggle}
-        >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-        </button>
       </nav>
     </div>
   )
