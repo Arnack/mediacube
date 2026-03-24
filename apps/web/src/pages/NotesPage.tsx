@@ -205,7 +205,7 @@ export function NotesPage() {
                 <button
                   key={note.id}
                   onClick={() => nav(`/notes/${note.id}`)}
-                  className="w-full text-left px-4 py-3 hover:bg-secondary/30 transition-colors"
+                  className="w-full text-left px-4 py-3 hover:bg-accent/30 transition-colors card-hover"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">

@@ -131,6 +131,7 @@ app.post('/classify', async (c) => {
 // POST /suggestions — idea suggestions based on recent notes
 app.post('/suggestions', async (c) => {
   const userId = c.get('userId')
+  const { lang } = await c.req.json<{ lang?: string }>().catch(() => ({ lang: undefined }))
   const { model, prompts } = await getSettings(c.env.AI_SETTINGS, userId)
   const openai = getOpenAI(c.env.OPENAI_API_KEY)
 
@@ -140,10 +141,16 @@ app.post('/suggestions', async (c) => {
 
   const notesSummary = notes.map(n => `- ${n.title}: ${n.summary || n.content?.slice(0, 200) || ''}`).join('\n')
 
+  const LANG_NAMES: Record<string, string> = { en: 'English', ru: 'Russian', zh: 'Chinese' }
+  const langName = (lang && LANG_NAMES[lang]) ? LANG_NAMES[lang] : null
+  const systemPrompt = langName
+    ? `${prompts.suggestions} Respond entirely in ${langName}.`
+    : prompts.suggestions
+
   const completion = await openai.chat.completions.create({
     model,
     messages: [
-      { role: 'system', content: prompts.suggestions },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: `Recent notes:\n${notesSummary}` },
     ],
     max_tokens: 600,

@@ -47,7 +47,8 @@
     "sortOldest": "Сначала старые",
     "sortAZ": "А–Я",
     "exportAll": "Экспорт всего",
-    "exporting": "Экспортирую…"
+    "exporting": "Экспортирую…",
+    "suggestionsHint": "Нажмите на идею, чтобы начать с неё"
   },
   "note": {
     "chat": "Чат",

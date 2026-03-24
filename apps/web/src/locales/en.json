@@ -47,7 +47,8 @@
     "sortOldest": "Oldest",
     "sortAZ": "A–Z",
     "exportAll": "Export all",
-    "exporting": "Exporting…"
+    "exporting": "Exporting…",
+    "suggestionsHint": "Click a suggestion to use it as a starting point"
   },
   "note": {
     "chat": "Chat",

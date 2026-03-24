@@ -73,7 +73,7 @@ export const ai = {
   brief: () => req(BASE.ai, '/brief', { method: 'POST', body: '{}' }),
   classify: (title: string, content?: string) =>
     req(BASE.ai, '/classify', { method: 'POST', body: JSON.stringify({ title, content }) }),
-  suggestions: () => req(BASE.ai, '/suggestions', { method: 'POST', body: '{}' }),
+  suggestions: (lang?: string) => req(BASE.ai, '/suggestions', { method: 'POST', body: JSON.stringify({ lang }) }),
   getSettings: () => req(BASE.ai, '/settings'),
   updateSettings: (data: object) => req(BASE.ai, '/settings', { method: 'PUT', body: JSON.stringify(data) }),
   resetSettings: () => req(BASE.ai, '/settings', { method: 'DELETE' }),

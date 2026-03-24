@@ -47,7 +47,8 @@
     "sortOldest": "最旧",
     "sortAZ": "A–Z",
     "exportAll": "导出全部",
-    "exporting": "导出中…"
+    "exporting": "导出中…",
+    "suggestionsHint": "点击建议以用作起点"
   },
   "note": {
     "chat": "聊天",
