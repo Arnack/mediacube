@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Folder } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { projects as projectsApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +13,7 @@ interface Project { id: string; title: string; description?: string; created_at:
 
 export function ProjectsPage() {
   const nav = useNavigate()
+  const { t } = useTranslation()
   const [projectsList, setProjectsList] = useState<Project[]>([])
   const [showNew, setShowNew] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -34,7 +36,7 @@ export function ProjectsPage() {
       setShowNew(false)
       nav(`/projects/${project.id}`)
     } catch (err: any) {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' })
+      toast({ title: t('projects.failed'), description: err.message, variant: 'destructive' })
     } finally {
       setCreating(false)
     }
@@ -43,19 +45,19 @@ export function ProjectsPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="border-b px-4 py-3 flex items-center justify-between">
-        <span className="text-base font-medium">Projects</span>
+        <span className="text-base font-medium">{t('projects.title')}</span>
         <Button size="sm" onClick={() => setShowNew(!showNew)}>
-          <Plus className="h-4 w-4" /> New
+          <Plus className="h-4 w-4" /> {t('projects.new')}
         </Button>
       </div>
 
       {showNew && (
         <form onSubmit={createProject} className="border-b px-4 py-3 space-y-2">
-          <Input placeholder="Project name" value={newTitle} onChange={e => setNewTitle(e.target.value)} autoFocus />
-          <Input placeholder="Description (optional)" value={newDesc} onChange={e => setNewDesc(e.target.value)} />
+          <Input placeholder={t('projects.projectName')} value={newTitle} onChange={e => setNewTitle(e.target.value)} autoFocus />
+          <Input placeholder={t('projects.description')} value={newDesc} onChange={e => setNewDesc(e.target.value)} />
           <div className="flex gap-2">
-            <Button size="sm" type="submit" disabled={creating || !newTitle.trim()}>{creating ? 'Creating…' : 'Create'}</Button>
-            <Button size="sm" variant="ghost" type="button" onClick={() => setShowNew(false)}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={creating || !newTitle.trim()}>{creating ? t('projects.creating') : t('projects.create')}</Button>
+            <Button size="sm" variant="ghost" type="button" onClick={() => setShowNew(false)}>{t('projects.cancel')}</Button>
           </div>
         </form>
       )}
@@ -65,7 +67,7 @@ export function ProjectsPage() {
           {projectsList.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <Folder className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No projects yet. Create one to organize related notes.</p>
+              <p className="text-sm text-muted-foreground">{t('projects.empty')}</p>
             </div>
           ) : projectsList.map(p => (
             <button

@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Sparkles, Tag, Trash2, ExternalLink, Send, ChevronDown } from 'lucide-react'
-import { notes as notesApi, ai } from '@/lib/api'
+import { useTranslation } from 'react-i18next'
+import { notes as notesApi, ai, projects as projectsApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatDate } from '@/lib/utils'
 import { toast } from '@/hooks/useToast'
@@ -16,6 +16,7 @@ interface Note { id: string; title: string; content?: string; summary?: string; 
 export function NoteDetailPage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
+  const { t } = useTranslation()
   const [note, setNote] = useState<Note | null>(null)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState('')
@@ -26,6 +27,9 @@ export function NoteDetailPage() {
   const [chatInput, setChatInput] = useState('')
   const [aiStreaming, setAiStreaming] = useState(false)
   const [expandContent, setExpandContent] = useState('')
+  const [savingProject, setSavingProject] = useState(false)
+  const [projectTitle, setProjectTitle] = useState('')
+  const [sections, setSections] = useState<{ title: string; content: string; checked: boolean }[]>([])
   const [tagInput, setTagInput] = useState('')
   const [suggestedTags, setSuggestedTags] = useState<string[]>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
@@ -48,9 +52,9 @@ export function NoteDetailPage() {
       const { note: updated } = await notesApi.update(note.id, { title, content }) as any
       setNote(updated)
       setEditing(false)
-      toast({ title: 'Saved' })
+      toast({ title: t('note.saved') })
     } catch (err: any) {
-      toast({ title: 'Save failed', description: err.message, variant: 'destructive' })
+      toast({ title: t('note.saveFailed'), description: err.message, variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -58,7 +62,7 @@ export function NoteDetailPage() {
 
   async function handleDelete() {
     if (!note) return
-    if (!confirm('Delete this note?')) return
+    if (!confirm(t('note.deleteConfirm'))) return
     await notesApi.delete(note.id)
     nav('/notes')
   }
@@ -103,25 +107,67 @@ export function NoteDetailPage() {
     }
   }
 
+  function parseOutlineSections(text: string): { title: string; content: string; checked: boolean }[] {
+    const headerRe = /^(#{1,3}\s+(.+)|(\d+)\.\s+\*{0,2}(.+?)\*{0,2})\s*$/
+    const lines = text.split('\n')
+    const result: { title: string; content: string; checked: boolean }[] = []
+    let current: { title: string; lines: string[] } | null = null
+    for (const line of lines) {
+      const m = line.match(headerRe)
+      if (m) {
+        if (current) result.push({ title: current.title, content: current.lines.join('\n').trim(), checked: true })
+        current = { title: (m[2] ?? m[4] ?? m[1]).replace(/\*\*/g, '').trim(), lines: [] }
+      } else if (current) {
+        current.lines.push(line)
+      }
+    }
+    if (current) result.push({ title: current.title, content: current.lines.join('\n').trim(), checked: true })
+    return result
+  }
+
   async function expandIdea() {
     if (!note) return
     setExpandContent('')
+    setSections([])
+    setProjectTitle(note.title)
     setAiPanel('expand')
     setAiStreaming(true)
+    let full = ''
     try {
       await ai.expand(note.title, note.summary || note.content || '', note.id, (chunk) => {
+        full += chunk
         setExpandContent(prev => prev + chunk)
       })
+      setSections(parseOutlineSections(full))
     } finally {
       setAiStreaming(false)
     }
   }
 
-  if (!note) return <div className="p-4 text-sm text-muted-foreground">Loading…</div>
+  async function saveAsProject() {
+    if (!note || !projectTitle.trim()) return
+    setSavingProject(true)
+    try {
+      const { project } = await projectsApi.create({ title: projectTitle.trim(), description: expandContent.slice(0, 500) }) as any
+      const checkedSections = sections.filter(s => s.checked)
+      const stubNotes = await Promise.all(
+        checkedSections.map(s => notesApi.create({ title: s.title, content: s.content }) as Promise<any>)
+      )
+      const stubIds = stubNotes.map(r => r.note.id)
+      await projectsApi.update(project.id, { noteIds: [note.id, ...stubIds] })
+      setAiPanel(null)
+      nav(`/projects/${project.id}`)
+    } catch (err: any) {
+      toast({ title: t('projects.failed'), description: err.message, variant: 'destructive' })
+    } finally {
+      setSavingProject(false)
+    }
+  }
+
+  if (!note) return <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>
 
   return (
     <div className="flex h-full">
-      {/* Main note */}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="border-b px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => nav('/notes')}>
@@ -137,16 +183,16 @@ export function NoteDetailPage() {
           <div className="flex items-center gap-1.5">
             {editing ? (
               <>
-                <Button size="sm" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
-                <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setTitle(note.title); setContent(note.content ?? '') }}>Cancel</Button>
+                <Button size="sm" onClick={save} disabled={saving}>{saving ? t('notes.saving') : t('notes.save')}</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setTitle(note.title); setContent(note.content ?? '') }}>{t('note.cancel')}</Button>
               </>
             ) : (
               <>
                 <Button size="sm" variant="outline" onClick={() => setAiPanel(aiPanel === 'chat' ? null : 'chat')}>
-                  <Sparkles className="h-3.5 w-3.5" /> Chat
+                  <Sparkles className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('note.chat')}</span>
                 </Button>
                 <Button size="sm" variant="outline" onClick={expandIdea}>
-                  <ChevronDown className="h-3.5 w-3.5" /> Expand
+                  <ChevronDown className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('note.expand')}</span>
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleDelete}>
                   <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -158,53 +204,49 @@ export function NoteDetailPage() {
 
         <ScrollArea className="flex-1">
           <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-            {/* Meta */}
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span>{formatDate(note.created_at)}</span>
-              {note.url && <a href={note.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-foreground"><ExternalLink className="h-3 w-3" /> Source</a>}
+              {note.url && <a href={note.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-foreground"><ExternalLink className="h-3 w-3" /> {t('note.source')}</a>}
             </div>
 
-            {/* Summary (for link notes) */}
             {note.summary && (
               <div className="bg-secondary/50 rounded-md p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">{t('note.summary')}</p>
                 <p className="text-sm">{note.summary}</p>
               </div>
             )}
 
-            {/* Content */}
             {editing ? (
               <Textarea
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 className="min-h-[300px] font-mono text-sm resize-none"
-                placeholder="Write your note…"
+                placeholder={t('note.writePlaceholder')}
               />
             ) : (
               <div className="text-sm leading-relaxed whitespace-pre-wrap cursor-text" onClick={() => setEditing(true)}>
-                {note.content || <span className="text-muted-foreground">Click to edit…</span>}
+                {note.content || <span className="text-muted-foreground">{t('note.clickToEdit')}</span>}
               </div>
             )}
 
             <Separator />
 
-            {/* Tags */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground">Tags</span>
-                <button onClick={getSuggestedTags} className="text-xs text-muted-foreground hover:text-foreground ml-auto">Suggest</button>
+                <span className="text-xs font-medium text-muted-foreground">{t('note.tags')}</span>
+                <button onClick={getSuggestedTags} className="text-xs text-muted-foreground hover:text-foreground ml-auto">{t('note.suggest')}</button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {note.tags.map(t => (
-                  <span key={t.id} className="inline-flex items-center gap-1 text-xs bg-secondary rounded px-2 py-0.5">
-                    {t.name}
-                    <button onClick={() => removeTag(t.name)} className="text-muted-foreground hover:text-foreground">×</button>
+                {note.tags.map(tag => (
+                  <span key={tag.id} className="inline-flex items-center gap-1 text-xs bg-secondary rounded px-2 py-0.5">
+                    {tag.name}
+                    <button onClick={() => removeTag(tag.name)} className="text-muted-foreground hover:text-foreground">×</button>
                   </span>
                 ))}
                 <Input
                   className="h-6 w-28 text-xs px-2"
-                  placeholder="Add tag…"
+                  placeholder={t('note.addTag')}
                   value={tagInput}
                   onChange={e => setTagInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput.trim()) } }}
@@ -212,8 +254,8 @@ export function NoteDetailPage() {
               </div>
               {suggestedTags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {suggestedTags.filter(t => !note.tags.find(nt => nt.name === t)).map(t => (
-                    <button key={t} onClick={() => addTag(t)} className="text-xs text-muted-foreground border rounded px-2 py-0.5 hover:bg-secondary">+ {t}</button>
+                  {suggestedTags.filter(tag => !note.tags.find(nt => nt.name === tag)).map(tag => (
+                    <button key={tag} onClick={() => addTag(tag)} className="text-xs text-muted-foreground border rounded px-2 py-0.5 hover:bg-secondary">+ {tag}</button>
                   ))}
                 </div>
               )}
@@ -222,11 +264,10 @@ export function NoteDetailPage() {
         </ScrollArea>
       </div>
 
-      {/* AI Panel */}
       {aiPanel && (
-        <div className="w-80 border-l flex flex-col">
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:relative md:inset-auto md:z-auto md:w-80 md:border-l">
           <div className="border-b px-4 py-3 flex items-center justify-between">
-            <span className="text-sm font-medium">{aiPanel === 'chat' ? 'AI Chat' : 'Expand Idea'}</span>
+            <span className="text-sm font-medium">{aiPanel === 'chat' ? t('note.aiChat') : t('note.expandIdea')}</span>
             <button onClick={() => setAiPanel(null)} className="text-muted-foreground hover:text-foreground">×</button>
           </div>
 
@@ -246,7 +287,7 @@ export function NoteDetailPage() {
               </ScrollArea>
               <div className="border-t p-3 flex gap-2">
                 <Input
-                  placeholder="Ask about this note…"
+                  placeholder={t('note.chatPlaceholder')}
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat() } }}
@@ -258,11 +299,41 @@ export function NoteDetailPage() {
               </div>
             </>
           ) : (
-            <ScrollArea className="flex-1 p-4">
-              <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                {expandContent || <span className="text-muted-foreground">Generating outline…</span>}
-              </div>
-            </ScrollArea>
+            <>
+              <ScrollArea className="flex-1 p-4">
+                <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {expandContent || <span className="text-muted-foreground">{t('note.generatingOutline')}</span>}
+                </div>
+              </ScrollArea>
+              {!aiStreaming && expandContent && (
+                <div className="border-t p-3 space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{t('note.projectTitleLabel')}</p>
+                    <Input value={projectTitle} onChange={e => setProjectTitle(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                  {sections.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5">{t('note.noteSections')}</p>
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {sections.map((s, i) => (
+                          <label key={i} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+                            <input
+                              type="checkbox"
+                              checked={s.checked}
+                              onChange={() => setSections(prev => prev.map((x, j) => j === i ? { ...x, checked: !x.checked } : x))}
+                            />
+                            <span className="truncate">{s.title}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <Button size="sm" className="w-full" onClick={saveAsProject} disabled={savingProject || !projectTitle.trim()}>
+                    {savingProject ? t('note.creatingProject') : t('note.saveAsProject')}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

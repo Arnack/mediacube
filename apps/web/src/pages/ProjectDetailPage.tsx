@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trash2, FileText, Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { projects as projectsApi, notes as notesApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { formatRelative } from '@/lib/utils'
-import { toast } from '@/hooks/useToast'
 
 interface Note { id: string; title: string; summary?: string; updated_at: number; tags: any[] }
 interface Project { id: string; title: string; description?: string }
@@ -15,6 +14,7 @@ interface Project { id: string; title: string; description?: string }
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
+  const { t } = useTranslation()
   const [project, setProject] = useState<Project | null>(null)
   const [projectNotes, setProjectNotes] = useState<Note[]>([])
   const [allNotes, setAllNotes] = useState<Note[]>([])
@@ -48,7 +48,7 @@ export function ProjectDetailPage() {
   }
 
   async function deleteProject() {
-    if (!id || !confirm('Delete this project?')) return
+    if (!id || !confirm(t('projects.deleteConfirm'))) return
     await projectsApi.delete(id)
     nav('/projects')
   }
@@ -58,7 +58,7 @@ export function ProjectDetailPage() {
     (!noteSearch || n.title.toLowerCase().includes(noteSearch.toLowerCase()))
   )
 
-  if (!project) return <div className="p-4 text-sm text-muted-foreground">Loading…</div>
+  if (!project) return <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>
 
   return (
     <div className="flex flex-col h-full">
@@ -71,7 +71,7 @@ export function ProjectDetailPage() {
           {project.description && <p className="text-xs text-muted-foreground">{project.description}</p>}
         </div>
         <Button size="sm" variant="outline" onClick={() => setShowAddNote(!showAddNote)}>
-          <Plus className="h-3.5 w-3.5" /> Add note
+          <Plus className="h-3.5 w-3.5" /> {t('projects.addNote')}
         </Button>
         <Button size="icon" variant="ghost" onClick={deleteProject}>
           <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -82,7 +82,7 @@ export function ProjectDetailPage() {
         <ScrollArea className="flex-1 p-4">
           <div className="max-w-2xl space-y-2">
             {projectNotes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No notes in this project yet.</p>
+              <p className="text-sm text-muted-foreground">{t('projects.noNotes')}</p>
             ) : projectNotes.map(note => (
               <div key={note.id} className="flex items-start gap-3 p-3 rounded-md border hover:bg-secondary/20 group">
                 <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
@@ -98,9 +98,9 @@ export function ProjectDetailPage() {
         </ScrollArea>
 
         {showAddNote && (
-          <div className="w-72 border-l flex flex-col">
+          <div className="fixed inset-0 z-50 flex flex-col bg-background md:relative md:inset-auto md:z-auto md:w-72 md:border-l">
             <div className="border-b px-3 py-2">
-              <Input placeholder="Search notes…" value={noteSearch} onChange={e => setNoteSearch(e.target.value)} className="h-8 text-sm" autoFocus />
+              <Input placeholder={t('projects.searchNotes')} value={noteSearch} onChange={e => setNoteSearch(e.target.value)} className="h-8 text-sm" autoFocus />
             </div>
             <ScrollArea className="flex-1">
               <div className="p-2 space-y-1">
@@ -109,7 +109,7 @@ export function ProjectDetailPage() {
                     {note.title}
                   </button>
                 ))}
-                {available.length === 0 && <p className="text-xs text-muted-foreground p-2">No notes found</p>}
+                {available.length === 0 && <p className="text-xs text-muted-foreground p-2">{t('projects.noNotesFound')}</p>}
               </div>
             </ScrollArea>
           </div>

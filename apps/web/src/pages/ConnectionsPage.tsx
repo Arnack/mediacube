@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GitBranch, ArrowRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { connections } from '@/lib/api'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatRelative } from '@/lib/utils'
@@ -9,6 +10,7 @@ interface Connection { id: string; note_a_id: string; note_b_id: string; note_a_
 
 export function ConnectionsPage() {
   const nav = useNavigate()
+  const { t } = useTranslation()
   const [list, setList] = useState<Connection[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -20,20 +22,20 @@ export function ConnectionsPage() {
     <div className="flex flex-col h-full">
       <div className="border-b px-4 py-3">
         <h1 className="text-base font-medium flex items-center gap-2">
-          <GitBranch className="h-4 w-4" /> Connections
+          <GitBranch className="h-4 w-4" /> {t('connections.title')}
         </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">AI-discovered links between your notes</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t('connections.subtitle')}</p>
       </div>
 
       <ScrollArea className="flex-1">
         <div className="p-4 max-w-2xl space-y-3">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{t('connections.loading')}</p>
           ) : list.length === 0 ? (
             <div className="text-center py-12">
               <GitBranch className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No connections found yet.</p>
-              <p className="text-xs text-muted-foreground mt-1">Connections are discovered automatically when you save new notes.</p>
+              <p className="text-sm text-muted-foreground">{t('connections.empty')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('connections.emptyDetail')}</p>
             </div>
           ) : list.map(conn => (
             <div key={conn.id} className="border rounded-md p-3 space-y-2">
