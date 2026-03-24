@@ -68,6 +68,8 @@ export const parser = {
 
 // AI
 export const ai = {
+  findConnections: (noteId: string) =>
+    req(BASE.ai, '/connections', { method: 'POST', body: JSON.stringify({ noteId }) }),
   classify: (title: string, content?: string) =>
     req(BASE.ai, '/classify', { method: 'POST', body: JSON.stringify({ title, content }) }),
   suggestions: () => req(BASE.ai, '/suggestions', { method: 'POST', body: '{}' }),

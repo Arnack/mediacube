@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { GitBranch, ArrowRight } from 'lucide-react'
+import { GitBranch, ArrowRight, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { connections } from '@/lib/api'
+import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatRelative } from '@/lib/utils'
 
@@ -14,17 +15,31 @@ export function ConnectionsPage() {
   const [list, setList] = useState<Connection[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    connections.list().then((d: any) => setList(d.connections)).finally(() => setLoading(false))
-  }, [])
+  async function load() {
+    setLoading(true)
+    try {
+      const d: any = await connections.list()
+      setList(d.connections)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b px-4 py-3">
-        <h1 className="text-base font-medium flex items-center gap-2">
-          <GitBranch className="h-4 w-4" /> {t('connections.title')}
-        </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">{t('connections.subtitle')}</p>
+      <div className="border-b px-4 py-3 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-base font-medium flex items-center gap-2">
+            <GitBranch className="h-4 w-4" /> {t('connections.title')}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('connections.subtitle')}</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">{t('connections.refresh')}</span>
+        </Button>
       </div>
 
       <ScrollArea className="flex-1">

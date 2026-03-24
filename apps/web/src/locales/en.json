@@ -40,7 +40,10 @@
     "newNote": "New note",
     "title": "Title",
     "startWriting": "Start writing…",
-    "failedCreate": "Failed to create note"
+    "failedCreate": "Failed to create note",
+    "sortNewest": "Newest",
+    "sortOldest": "Oldest",
+    "sortAZ": "A–Z"
   },
   "note": {
     "chat": "Chat",
@@ -64,7 +67,11 @@
     "creatingProject": "Creating…",
     "projectTitleLabel": "Project title",
     "noteSections": "Note stubs from outline",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "chatFailed": "Chat failed",
+    "expandFailed": "Expand failed",
+    "findConnections": "Find connections",
+    "findingConnections": "Finding…"
   },
   "projects": {
     "title": "Projects",
@@ -86,6 +93,7 @@
     "title": "Connections",
     "subtitle": "AI-discovered links between your notes",
     "loading": "Loading…",
+    "refresh": "Refresh",
     "empty": "No connections found yet.",
     "emptyDetail": "Connections are discovered automatically when you save new notes."
   },

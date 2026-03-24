@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trash2, FileText, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { projects as projectsApi, notes as notesApi } from '@/lib/api'
+import { toast } from '@/hooks/useToast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -34,23 +35,35 @@ export function ProjectDetailPage() {
     if (!project || !id) return
     const currentIds = projectNotes.map(n => n.id)
     if (currentIds.includes(noteId)) return
-    await projectsApi.update(id, { noteIds: [...currentIds, noteId] })
-    const note = allNotes.find(n => n.id === noteId)
-    if (note) setProjectNotes(prev => [...prev, note])
-    setShowAddNote(false)
+    try {
+      await projectsApi.update(id, { noteIds: [...currentIds, noteId] })
+      const note = allNotes.find(n => n.id === noteId)
+      if (note) setProjectNotes(prev => [...prev, note])
+      setShowAddNote(false)
+    } catch (err: any) {
+      toast({ title: t('projects.failed'), description: err.message, variant: 'destructive' })
+    }
   }
 
   async function removeNote(noteId: string) {
     if (!id) return
     const newIds = projectNotes.filter(n => n.id !== noteId).map(n => n.id)
-    await projectsApi.update(id, { noteIds: newIds })
-    setProjectNotes(prev => prev.filter(n => n.id !== noteId))
+    try {
+      await projectsApi.update(id, { noteIds: newIds })
+      setProjectNotes(prev => prev.filter(n => n.id !== noteId))
+    } catch (err: any) {
+      toast({ title: t('projects.failed'), description: err.message, variant: 'destructive' })
+    }
   }
 
   async function deleteProject() {
     if (!id || !confirm(t('projects.deleteConfirm'))) return
-    await projectsApi.delete(id)
-    nav('/projects')
+    try {
+      await projectsApi.delete(id)
+      nav('/projects')
+    } catch (err: any) {
+      toast({ title: t('projects.failed'), description: err.message, variant: 'destructive' })
+    }
   }
 
   const available = allNotes.filter(n =>

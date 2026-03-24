@@ -40,7 +40,10 @@
     "newNote": "Новая заметка",
     "title": "Заголовок",
     "startWriting": "Начните писать…",
-    "failedCreate": "Не удалось создать заметку"
+    "failedCreate": "Не удалось создать заметку",
+    "sortNewest": "Сначала новые",
+    "sortOldest": "Сначала старые",
+    "sortAZ": "А–Я"
   },
   "note": {
     "chat": "Чат",
@@ -64,7 +67,11 @@
     "creatingProject": "Создаю…",
     "projectTitleLabel": "Название проекта",
     "noteSections": "Заметки из плана",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "chatFailed": "Ошибка чата",
+    "expandFailed": "Ошибка разворота",
+    "findConnections": "Найти связи",
+    "findingConnections": "Ищу…"
   },
   "projects": {
     "title": "Проекты",
@@ -86,6 +93,7 @@
     "title": "Связи",
     "subtitle": "Семантические связи между вашими заметками, найденные ИИ",
     "loading": "Загрузка…",
+    "refresh": "Обновить",
     "empty": "Связей пока не найдено.",
     "emptyDetail": "Связи обнаруживаются автоматически при сохранении новых заметок."
   },

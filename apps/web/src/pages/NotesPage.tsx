@@ -25,6 +25,7 @@ export function NotesPage() {
   const [addingUrl, setAddingUrl] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suggestions, setSuggestions] = useState<{ title: string; description: string }[]>([])
+  const [sort, setSort] = useState<'newest' | 'oldest' | 'az'>('newest')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -97,6 +98,17 @@ export function NotesPage() {
             <Plus className="h-4 w-4" />
             {t('notes.new')}
           </Button>
+          <div className="flex border rounded-md overflow-hidden text-xs">
+            {(['newest', 'oldest', 'az'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setSort(s)}
+                className={`px-2 py-1.5 ${sort === s ? 'bg-secondary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                {t(`notes.sort${s === 'az' ? 'AZ' : s.charAt(0).toUpperCase() + s.slice(1)}`)}
+              </button>
+            ))}
+          </div>
           <Button size="sm" variant="outline" onClick={loadSuggestions}>
             <Sparkles className="h-4 w-4" />
           </Button>
@@ -147,7 +159,11 @@ export function NotesPage() {
                 <Button size="sm" className="mt-3" onClick={() => nav('/notes/new')}>{t('notes.createFirst')}</Button>
               </div>
             ) : (
-              notesList.map(note => (
+              [...notesList].sort((a, b) =>
+                sort === 'newest' ? b.updated_at - a.updated_at :
+                sort === 'oldest' ? a.updated_at - b.updated_at :
+                a.title.localeCompare(b.title)
+              ).map(note => (
                 <button
                   key={note.id}
                   onClick={() => nav(`/notes/${note.id}`)}

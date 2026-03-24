@@ -40,7 +40,10 @@
     "newNote": "新建笔记",
     "title": "标题",
     "startWriting": "开始写作…",
-    "failedCreate": "创建笔记失败"
+    "failedCreate": "创建笔记失败",
+    "sortNewest": "最新",
+    "sortOldest": "最旧",
+    "sortAZ": "A–Z"
   },
   "note": {
     "chat": "聊天",
@@ -64,7 +67,11 @@
     "creatingProject": "创建中…",
     "projectTitleLabel": "项目名称",
     "noteSections": "从大纲创建笔记",
-    "cancel": "取消"
+    "cancel": "取消",
+    "chatFailed": "聊天失败",
+    "expandFailed": "展开失败",
+    "findConnections": "查找关联",
+    "findingConnections": "查找中…"
   },
   "projects": {
     "title": "项目",
@@ -86,6 +93,7 @@
     "title": "关联",
     "subtitle": "AI 发现的笔记间语义关联",
     "loading": "加载中…",
+    "refresh": "刷新",
     "empty": "暂未发现关联。",
     "emptyDetail": "保存新笔记时会自动发现关联。"
   },

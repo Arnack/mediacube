@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Sparkles, Tag, Trash2, ExternalLink, Send, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Sparkles, Tag, Trash2, ExternalLink, Send, ChevronDown, GitBranch } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { notes as notesApi, ai, projects as projectsApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { Markdown } from '@/components/Markdown'
 import { formatDate } from '@/lib/utils'
 import { toast } from '@/hooks/useToast'
 
@@ -22,6 +23,7 @@ export function NoteDetailPage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [aiPanel, setAiPanel] = useState<'chat' | 'expand' | null>(null)
   const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([])
   const [chatInput, setChatInput] = useState('')
@@ -32,6 +34,7 @@ export function NoteDetailPage() {
   const [sections, setSections] = useState<{ title: string; content: string; checked: boolean }[]>([])
   const [tagInput, setTagInput] = useState('')
   const [suggestedTags, setSuggestedTags] = useState<string[]>([])
+  const [findingConnections, setFindingConnections] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -63,14 +66,22 @@ export function NoteDetailPage() {
   async function handleDelete() {
     if (!note) return
     if (!confirm(t('note.deleteConfirm'))) return
-    await notesApi.delete(note.id)
-    nav('/notes')
+    setDeleting(true)
+    try {
+      await notesApi.delete(note.id)
+      nav('/notes')
+    } catch (err: any) {
+      toast({ title: t('note.saveFailed'), description: err.message, variant: 'destructive' })
+      setDeleting(false)
+    }
   }
 
   async function getSuggestedTags() {
     if (!note) return
-    const { tags } = await ai.classify(note.title, note.content ?? note.summary ?? '') as any
-    setSuggestedTags(tags)
+    try {
+      const { tags } = await ai.classify(note.title, note.content ?? note.summary ?? '') as any
+      setSuggestedTags(tags)
+    } catch { /* silent */ }
   }
 
   async function addTag(tagName: string) {
@@ -92,16 +103,18 @@ export function NoteDetailPage() {
     if (!chatInput.trim() || aiStreaming) return
     const userMsg = { role: 'user', content: chatInput }
     const newMessages = [...chatMessages, userMsg]
-    setChatMessages(newMessages)
+    setChatMessages([...newMessages, { role: 'assistant', content: '' }])
     setChatInput('')
     setAiStreaming(true)
     let reply = ''
-    setChatMessages([...newMessages, { role: 'assistant', content: '' }])
     try {
       await ai.chat(newMessages, note?.id, (chunk) => {
         reply += chunk
         setChatMessages([...newMessages, { role: 'assistant', content: reply }])
       })
+    } catch {
+      setChatMessages(newMessages)
+      toast({ title: t('note.chatFailed'), variant: 'destructive' })
     } finally {
       setAiStreaming(false)
     }
@@ -139,6 +152,9 @@ export function NoteDetailPage() {
         setExpandContent(prev => prev + chunk)
       })
       setSections(parseOutlineSections(full))
+    } catch {
+      setExpandContent('')
+      toast({ title: t('note.expandFailed'), variant: 'destructive' })
     } finally {
       setAiStreaming(false)
     }
@@ -161,6 +177,19 @@ export function NoteDetailPage() {
       toast({ title: t('projects.failed'), description: err.message, variant: 'destructive' })
     } finally {
       setSavingProject(false)
+    }
+  }
+
+  async function handleFindConnections() {
+    if (!note) return
+    setFindingConnections(true)
+    try {
+      await ai.findConnections(note.id)
+      toast({ title: t('note.findConnections') })
+    } catch (err: any) {
+      toast({ title: err.message, variant: 'destructive' })
+    } finally {
+      setFindingConnections(false)
     }
   }
 
@@ -194,7 +223,10 @@ export function NoteDetailPage() {
                 <Button size="sm" variant="outline" onClick={expandIdea}>
                   <ChevronDown className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('note.expand')}</span>
                 </Button>
-                <Button variant="ghost" size="icon" onClick={handleDelete}>
+                <Button size="sm" variant="outline" onClick={handleFindConnections} disabled={findingConnections}>
+                  <GitBranch className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{findingConnections ? t('note.findingConnections') : t('note.findConnections')}</span>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleDelete} disabled={deleting}>
                   <Trash2 className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </>
@@ -212,7 +244,7 @@ export function NoteDetailPage() {
             {note.summary && (
               <div className="bg-secondary/50 rounded-md p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">{t('note.summary')}</p>
-                <p className="text-sm">{note.summary}</p>
+                <div className="text-sm"><Markdown>{note.summary}</Markdown></div>
               </div>
             )}
 
@@ -224,8 +256,10 @@ export function NoteDetailPage() {
                 placeholder={t('note.writePlaceholder')}
               />
             ) : (
-              <div className="text-sm leading-relaxed whitespace-pre-wrap cursor-text" onClick={() => setEditing(true)}>
-                {note.content || <span className="text-muted-foreground">{t('note.clickToEdit')}</span>}
+              <div className="cursor-text" onClick={() => setEditing(true)}>
+                {note.content
+                  ? <Markdown>{note.content}</Markdown>
+                  : <span className="text-sm text-muted-foreground">{t('note.clickToEdit')}</span>}
               </div>
             )}
 
@@ -278,7 +312,9 @@ export function NoteDetailPage() {
                   {chatMessages.map((m, i) => (
                     <div key={i} className={`text-sm ${m.role === 'user' ? 'text-right' : ''}`}>
                       <div className={`inline-block max-w-[85%] rounded-md px-3 py-2 text-left ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
-                        {m.content || <span className="opacity-50">…</span>}
+                        {m.content
+                          ? (m.role === 'assistant' ? <Markdown>{m.content}</Markdown> : m.content)
+                          : <span className="opacity-50">…</span>}
                       </div>
                     </div>
                   ))}
@@ -301,9 +337,9 @@ export function NoteDetailPage() {
           ) : (
             <>
               <ScrollArea className="flex-1 p-4">
-                <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {expandContent || <span className="text-muted-foreground">{t('note.generatingOutline')}</span>}
-                </div>
+                {expandContent
+                  ? <Markdown>{expandContent}</Markdown>
+                  : <span className="text-sm text-muted-foreground">{t('note.generatingOutline')}</span>}
               </ScrollArea>
               {!aiStreaming && expandContent && (
                 <div className="border-t p-3 space-y-3">
