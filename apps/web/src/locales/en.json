@@ -21,6 +21,8 @@
     "notes": "Notes",
     "projects": "Projects",
     "connections": "Connections",
+    "graph": "Graph",
+    "brief": "Brief",
     "settings": "Settings"
   },
   "notes": {
@@ -43,7 +45,9 @@
     "failedCreate": "Failed to create note",
     "sortNewest": "Newest",
     "sortOldest": "Oldest",
-    "sortAZ": "A–Z"
+    "sortAZ": "A–Z",
+    "exportAll": "Export all",
+    "exporting": "Exporting…"
   },
   "note": {
     "chat": "Chat",
@@ -71,7 +75,29 @@
     "chatFailed": "Chat failed",
     "expandFailed": "Expand failed",
     "findConnections": "Find connections",
-    "findingConnections": "Finding…"
+    "findingConnections": "Finding…",
+    "related": "Related notes",
+    "relatedEmpty": "No connections yet",
+    "export": "Export .md",
+    "autoTagged": "AI added tags: {{tags}}"
+  },
+  "graph": {
+    "title": "Knowledge Graph",
+    "subtitle": "Visual map of connections between your notes",
+    "empty": "No connections yet. Add notes and use Find Connections to build the graph.",
+    "clickToOpen": "Click a node to open the note"
+  },
+  "brief": {
+    "title": "Daily Brief",
+    "subtitle": "AI insights based on your recent notes",
+    "themes": "Recurring themes",
+    "focus": "Focus today",
+    "prompt": "Think about this",
+    "loading": "Generating your brief…",
+    "refresh": "Refresh",
+    "goToNote": "Go to note",
+    "empty": "Add more notes to get a personalized brief.",
+    "noNotes": "No notes yet"
   },
   "projects": {
     "title": "Projects",

@@ -70,6 +70,7 @@ export const parser = {
 export const ai = {
   findConnections: (noteId: string) =>
     req(BASE.ai, '/connections', { method: 'POST', body: JSON.stringify({ noteId }) }),
+  brief: () => req(BASE.ai, '/brief', { method: 'POST', body: '{}' }),
   classify: (title: string, content?: string) =>
     req(BASE.ai, '/classify', { method: 'POST', body: JSON.stringify({ title, content }) }),
   suggestions: () => req(BASE.ai, '/suggestions', { method: 'POST', body: '{}' }),

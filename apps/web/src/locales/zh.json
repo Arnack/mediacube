@@ -21,6 +21,8 @@
     "notes": "笔记",
     "projects": "项目",
     "connections": "关联",
+    "graph": "图谱",
+    "brief": "简报",
     "settings": "设置"
   },
   "notes": {
@@ -43,7 +45,9 @@
     "failedCreate": "创建笔记失败",
     "sortNewest": "最新",
     "sortOldest": "最旧",
-    "sortAZ": "A–Z"
+    "sortAZ": "A–Z",
+    "exportAll": "导出全部",
+    "exporting": "导出中…"
   },
   "note": {
     "chat": "聊天",
@@ -71,7 +75,29 @@
     "chatFailed": "聊天失败",
     "expandFailed": "展开失败",
     "findConnections": "查找关联",
-    "findingConnections": "查找中…"
+    "findingConnections": "查找中…",
+    "related": "相关笔记",
+    "relatedEmpty": "暂无关联",
+    "export": "导出 .md",
+    "autoTagged": "AI 已添加标签：{{tags}}"
+  },
+  "graph": {
+    "title": "知识图谱",
+    "subtitle": "笔记间关联的可视化地图",
+    "empty": "暂无关联。添加笔记并使用「查找关联」来构建图谱。",
+    "clickToOpen": "点击节点打开笔记"
+  },
+  "brief": {
+    "title": "每日简报",
+    "subtitle": "基于近期笔记的 AI 洞察",
+    "themes": "反复出现的主题",
+    "focus": "今日重点",
+    "prompt": "思考这个问题",
+    "loading": "生成简报中…",
+    "refresh": "刷新",
+    "goToNote": "打开笔记",
+    "empty": "添加更多笔记以获取个性化简报。",
+    "noNotes": "暂无笔记"
   },
   "projects": {
     "title": "项目",

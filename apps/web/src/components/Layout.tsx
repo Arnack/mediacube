@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { FileText, Folder, GitBranch, Settings, LogOut } from 'lucide-react'
+import { FileText, Folder, GitBranch, Settings, LogOut, Network, Lightbulb } from 'lucide-react'
 import { logout } from '@/store/auth'
 import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
@@ -19,6 +19,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { to: '/notes', icon: FileText, label: t('nav.notes') },
     { to: '/projects', icon: Folder, label: t('nav.projects') },
     { to: '/connections', icon: GitBranch, label: t('nav.connections') },
+    { to: '/graph', icon: Network, label: t('nav.graph') },
+    { to: '/brief', icon: Lightbulb, label: t('nav.brief') },
     { to: '/settings', icon: Settings, label: t('nav.settings') },
   ]
 

@@ -46,6 +46,7 @@ async function getSettings(kv: KVNamespace, userId: string) {
       suggestions: stored?.suggestions ?? DEFAULT_PROMPTS.suggestions,
       expand: stored?.expand ?? DEFAULT_PROMPTS.expand,
       connections: stored?.connections ?? DEFAULT_PROMPTS.connections,
+      brief: stored?.brief ?? DEFAULT_PROMPTS.brief,
     },
   }
 }
@@ -249,6 +250,37 @@ app.post('/connections', async (c) => {
   }
 
   return c.json({ connections: saved })
+})
+
+// POST /brief — personalized daily knowledge brief
+app.post('/brief', async (c) => {
+  const userId = c.get('userId')
+  const { model, prompts } = await getSettings(c.env.AI_SETTINGS, userId)
+  const openai = getOpenAI(c.env.OPENAI_API_KEY)
+
+  const { results: notes } = await c.env.DB.prepare(
+    'SELECT title, summary, content FROM notes WHERE user_id = ? ORDER BY updated_at DESC LIMIT 30'
+  ).bind(userId).all<{ title: string; summary: string; content: string }>()
+
+  if (notes.length === 0) return c.json({ threads: [], focus: null, prompt: null })
+
+  const notesContext = notes
+    .map((n, i) => `${i + 1}. "${n.title}": ${(n.summary || n.content || '').slice(0, 150)}`)
+    .join('\n')
+
+  const completion = await openai.chat.completions.create({
+    model,
+    messages: [
+      { role: 'system', content: prompts.brief },
+      { role: 'user', content: `My recent notes:\n\n${notesContext}` },
+    ],
+    max_tokens: 600,
+    response_format: { type: 'json_object' },
+  })
+
+  let brief: any = { threads: [], focus: null, prompt: null }
+  try { brief = JSON.parse(completion.choices[0].message.content ?? '{}') } catch {}
+  return c.json(brief)
 })
 
 // POST /chat — open-ended AI chat about a note or idea

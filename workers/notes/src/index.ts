@@ -71,6 +71,7 @@ app.get('/notes', async (c) => {
 // Get single note
 app.get('/notes/:id', async (c) => {
   const userId = c.get('userId')
+  const noteId = c.req.param('id')
   const note = await c.env.DB.prepare(`
     SELECT n.*, GROUP_CONCAT(t.name) as tag_names, GROUP_CONCAT(t.id) as tag_ids, GROUP_CONCAT(t.color) as tag_colors
     FROM notes n
@@ -78,9 +79,27 @@ app.get('/notes/:id', async (c) => {
     LEFT JOIN tags t ON t.id = nt.tag_id
     WHERE n.id = ? AND n.user_id = ?
     GROUP BY n.id
-  `).bind(c.req.param('id'), userId).first<any>()
+  `).bind(noteId, userId).first<any>()
   if (!note) return c.json({ error: 'Not found' }, 404)
-  return c.json({ note: formatNote(note) })
+
+  const { results: connRows } = await c.env.DB.prepare(`
+    SELECT c.id, c.note_a_id, c.note_b_id, c.reason,
+      na.title as note_a_title, nb.title as note_b_title
+    FROM connections c
+    JOIN notes na ON na.id = c.note_a_id
+    JOIN notes nb ON nb.id = c.note_b_id
+    WHERE c.user_id = ? AND (c.note_a_id = ? OR c.note_b_id = ?)
+    LIMIT 20
+  `).bind(userId, noteId, noteId).all<any>()
+
+  const backlinks = connRows.map(r => ({
+    id: r.id,
+    reason: r.reason,
+    other_id: r.note_a_id === noteId ? r.note_b_id : r.note_a_id,
+    other_title: r.note_a_id === noteId ? r.note_b_title : r.note_a_title,
+  }))
+
+  return c.json({ note: formatNote(note), backlinks })
 })
 
 // Create note

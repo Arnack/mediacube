@@ -11,6 +11,8 @@ import { NewNotePage } from './pages/NewNotePage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { ProjectDetailPage } from './pages/ProjectDetailPage'
 import { ConnectionsPage } from './pages/ConnectionsPage'
+import { GraphPage } from './pages/GraphPage'
+import { BriefPage } from './pages/BriefPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -40,6 +42,8 @@ export default function App() {
         <Route path="/projects" element={<PrivateRoute><ProjectsPage /></PrivateRoute>} />
         <Route path="/projects/:id" element={<PrivateRoute><ProjectDetailPage /></PrivateRoute>} />
         <Route path="/connections" element={<PrivateRoute><ConnectionsPage /></PrivateRoute>} />
+        <Route path="/graph" element={<PrivateRoute><GraphPage /></PrivateRoute>} />
+        <Route path="/brief" element={<PrivateRoute><BriefPage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

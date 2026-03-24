@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { notes as notesApi } from '@/lib/api'
+import { notes as notesApi, ai } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,6 +23,12 @@ export function NewNotePage() {
     setSaving(true)
     try {
       const { note } = await notesApi.create({ title: title.trim(), content: content.trim() }) as any
+      if (content.trim().length > 100) {
+        try {
+          const { tags: suggested } = await ai.classify(title.trim(), content.trim()) as any
+          if (suggested?.length > 0) await notesApi.update(note.id, { tags: suggested })
+        } catch { /* silent */ }
+      }
       nav(`/notes/${note.id}`, { replace: true })
     } catch (err: any) {
       toast({ title: t('notes.failedCreate'), description: err.message, variant: 'destructive' })

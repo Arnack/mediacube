@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
+import JSZip from 'jszip'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Search, Link as LinkIcon, FileText, Sparkles, X } from 'lucide-react'
+import { Plus, Search, Link as LinkIcon, FileText, Sparkles, X, Archive } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { notes as notesApi, tags as tagsApi, ai, parser } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,7 @@ export function NotesPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suggestions, setSuggestions] = useState<{ title: string; description: string }[]>([])
   const [sort, setSort] = useState<'newest' | 'oldest' | 'az'>('newest')
+  const [exportingAll, setExportingAll] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -63,6 +65,38 @@ export function NotesPage() {
       toast({ title: t('notes.failedParseUrl'), description: err.message, variant: 'destructive' })
     } finally {
       setAddingUrl(false)
+    }
+  }
+
+  async function handleExportAll() {
+    setExportingAll(true)
+    try {
+      const { notes: all } = await notesApi.list({ limit: '1000' }) as any
+      const zip = new JSZip()
+      for (const note of all) {
+        const tags = (note.tags ?? []).map((t: any) => t.name)
+        const frontmatter = [
+          '---',
+          `title: "${note.title.replace(/"/g, '\\"')}"`,
+          tags.length ? `tags: [${tags.join(', ')}]` : null,
+          note.url ? `url: ${note.url}` : null,
+          `created: ${new Date(note.created_at * 1000).toISOString().slice(0, 10)}`,
+          '---',
+        ].filter(Boolean).join('\n')
+        const body = [frontmatter, '', `# ${note.title}`, '', note.content ?? note.summary ?? ''].join('\n')
+        const filename = note.title.replace(/[/\\?%*:|"<>]/g, '-').slice(0, 80) + '.md'
+        zip.file(filename, body)
+      }
+      const blob = await zip.generateAsync({ type: 'blob' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `ideavault-export-${new Date().toISOString().slice(0, 10)}.zip`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err: any) {
+      toast({ title: t('notes.exportAll'), description: err.message, variant: 'destructive' })
+    } finally {
+      setExportingAll(false)
     }
   }
 
@@ -111,6 +145,10 @@ export function NotesPage() {
           </div>
           <Button size="sm" variant="outline" onClick={loadSuggestions}>
             <Sparkles className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleExportAll} disabled={exportingAll}>
+            <Archive className="h-4 w-4" />
+            <span className="hidden sm:inline">{exportingAll ? t('notes.exporting') : t('notes.exportAll')}</span>
           </Button>
         </div>
 

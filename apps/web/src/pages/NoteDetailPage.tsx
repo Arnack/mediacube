@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Sparkles, Tag, Trash2, ExternalLink, Send, ChevronDown, GitBranch } from 'lucide-react'
+import { ArrowLeft, Sparkles, Tag, Trash2, ExternalLink, Send, ChevronDown, GitBranch, Download } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { notes as notesApi, ai, projects as projectsApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,7 @@ export function NoteDetailPage() {
   const [tagInput, setTagInput] = useState('')
   const [suggestedTags, setSuggestedTags] = useState<string[]>([])
   const [findingConnections, setFindingConnections] = useState(false)
+  const [backlinks, setBacklinks] = useState<{ id: string; other_id: string; other_title: string; reason: string }[]>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export function NoteDetailPage() {
       setNote(d.note)
       setTitle(d.note.title)
       setContent(d.note.content ?? '')
+      setBacklinks(d.backlinks ?? [])
     })
   }, [id])
 
@@ -56,11 +58,24 @@ export function NoteDetailPage() {
       setNote(updated)
       setEditing(false)
       toast({ title: t('note.saved') })
+      if (content.length > 100) autoTag(note.id, updated.title, content, updated.tags.map((tg: any) => tg.name))
     } catch (err: any) {
       toast({ title: t('note.saveFailed'), description: err.message, variant: 'destructive' })
     } finally {
       setSaving(false)
     }
+  }
+
+  async function autoTag(noteId: string, noteTitle: string, noteContent: string, existing: string[]) {
+    try {
+      const { tags: suggested } = await ai.classify(noteTitle, noteContent) as any
+      const newTags = (suggested as string[]).filter(tg => !existing.includes(tg))
+      if (newTags.length > 0) {
+        const { note: withTags } = await notesApi.update(noteId, { tags: [...existing, ...newTags] }) as any
+        setNote(withTags)
+        toast({ title: t('note.autoTagged', { tags: newTags.join(', ') }) })
+      }
+    } catch { /* silent */ }
   }
 
   async function handleDelete() {
@@ -185,12 +200,37 @@ export function NoteDetailPage() {
     setFindingConnections(true)
     try {
       await ai.findConnections(note.id)
+      // Refresh backlinks after finding new connections
+      const d: any = await notesApi.get(note.id)
+      setBacklinks(d.backlinks ?? [])
       toast({ title: t('note.findConnections') })
     } catch (err: any) {
       toast({ title: err.message, variant: 'destructive' })
     } finally {
       setFindingConnections(false)
     }
+  }
+
+  function handleExport() {
+    if (!note) return
+    const tags = note.tags.map((t: any) => t.name)
+    const date = new Date(note.created_at * 1000).toISOString().slice(0, 10)
+    const front = [
+      '---',
+      `title: "${note.title.replace(/"/g, '\\"')}"`,
+      tags.length ? `tags: [${tags.map((t: string) => `"${t}"`).join(', ')}]` : null,
+      note.url ? `url: ${note.url}` : null,
+      `created: ${date}`,
+      '---',
+      '',
+    ].filter(l => l !== null).join('\n')
+    const body = note.content ? `# ${note.title}\n\n${note.content}` : `# ${note.title}`
+    const blob = new Blob([front + body], { type: 'text/markdown' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `${note.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.md`
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   if (!note) return <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>
@@ -225,6 +265,9 @@ export function NoteDetailPage() {
                 </Button>
                 <Button size="sm" variant="outline" onClick={handleFindConnections} disabled={findingConnections}>
                   <GitBranch className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{findingConnections ? t('note.findingConnections') : t('note.findConnections')}</span>
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleExport}>
+                  <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t('note.export')}</span>
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleDelete} disabled={deleting}>
                   <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -294,6 +337,31 @@ export function NoteDetailPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">{t('note.related')}</span>
+            </div>
+            {backlinks.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t('note.relatedEmpty')}</p>
+            ) : (
+              <div className="space-y-1.5">
+                {backlinks.map(bl => (
+                  <button
+                    key={bl.id}
+                    onClick={() => nav(`/notes/${bl.other_id}`)}
+                    className="w-full text-left border rounded-md px-3 py-2 hover:bg-secondary/30 group"
+                  >
+                    <p className="text-xs font-medium">{bl.other_title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{bl.reason}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>

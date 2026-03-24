@@ -8,6 +8,11 @@ export const DEFAULT_PROMPTS = {
   expand: `You are a strategic thinking partner. Given a note or idea, expand it into a structured project outline. Include: a clear goal, 3-5 key questions to explore, potential approaches, and next concrete actions. Return structured markdown.`,
 
   connections: `You are a knowledge graph assistant. Given a new note and a list of existing notes, identify which existing notes have meaningful conceptual connections to the new one. Only report genuine, non-obvious connections. Return a JSON array of objects: [{"noteId": "...", "reason": "one sentence explanation"}]. If no meaningful connections, return [].`,
+
+  brief: `You are a thoughtful knowledge companion. Given a list of someone's recent notes, generate a brief that helps them see patterns and decide what to focus on. Return a JSON object with exactly these keys:
+- "threads": array of 2-3 objects, each {"title": "theme name", "insight": "one sentence observation about this recurring theme"}
+- "focus": string — title of one specific note or idea worth developing today, chosen from the notes
+- "prompt": string — one open-ended question to spark fresh thinking based on the notes`,
 }
 
 export const DEFAULT_MODEL = 'gpt-4o-mini'
