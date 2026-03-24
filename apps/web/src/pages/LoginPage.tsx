@@ -45,18 +45,18 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm space-y-6 px-4">
-        <div className="text-center space-y-1">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
-              <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <span className="text-xl font-bold tracking-tight text-foreground">{t('app.name')}</span>
-          </div>
-          <p className="text-sm text-muted-foreground">{t('auth.signInTitle')}</p>
+    <div className="min-h-screen flex items-center justify-center bg-background relative">
+      <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:24px_24px] opacity-50 pointer-events-none" />
+      <div className="w-full max-w-sm space-y-6 px-4 relative z-10">
+        <div className="text-center space-y-2 mb-8 mt-2">
+          <h1 className="text-4xl font-black tracking-tighter text-foreground">
+            {t('app.name')}
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium">
+            Sign in to unlock your creative space.
+          </p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-sm">
+        <div className="bg-card border border-border rounded-xl p-6 sm:p-8 space-y-4 shadow-xl shadow-black/5">
           <form onSubmit={handleSubmit} className="space-y-4 mt-2">
             <div className="space-y-1.5 flex flex-col text-left">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('auth.email')}</label>
